@@ -1,0 +1,754 @@
+.equipment-shop .shop-tab-list {
+  width: 100%;
+}
+.equipment-shop .shop-tab-list button {
+  min-width: 0;
+  padding: 7px 9px;
+  gap: 6px;
+}
+.tool-level {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #97afa8;
+}
+.progression-tab,
+.lab-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.progression-tab[hidden] {
+  display: none;
+}
+.lab-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 4px 12px 0;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #7297b970 #14212b;
+}
+.lab-scroll:focus-visible {
+  outline: 2px solid #acbce1;
+  outline-offset: 2px;
+}
+.lab-note {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #a1b4c3;
+  margin: 0 0 13px;
+}
+.research-filters {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+.research-panel > .research-filters {
+  padding-top: 12px;
+}
+.research-filters button {
+  padding: 7px 11px;
+  border: 1px solid #7998b239;
+  border-radius: 5px;
+  background: #102132;
+  font-size: 14px;
+  color: #9eb1c1;
+}
+.research-filters button[aria-pressed='true'] {
+  background: #373650;
+  border-color: #aaa0d165;
+  color: #e4ddfc;
+}
+.research-filters button small {
+  margin-left: 4px;
+  color: #a2a0b8;
+  font:
+    12px var(--font-geist-mono),
+    monospace;
+}
+.research-card {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 116px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 12px;
+  border: 1px solid #7798b52c;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #172b3ce0, #111d2be0);
+  margin-bottom: 9px;
+}
+.research-card.researched {
+  border-color: #84c7a74a;
+  background: linear-gradient(110deg, #17373580, #121f2b);
+}
+.research-card .equipment-art {
+  width: 52px;
+  height: 52px;
+}
+.research-copy {
+  min-width: 0;
+}
+.research-copy h3,
+.lab-card h3,
+.lab-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #e1e9f3;
+  margin: 3px 0;
+}
+.research-copy h3 b {
+  font:
+    15px var(--font-geist-mono),
+    monospace;
+  color: #bdb0f4;
+}
+.research-copy p {
+  color: #a5b7c8;
+  font-size: 13px;
+  margin: 4px 0 0;
+  line-height: 1.6;
+}
+.research-copy small {
+  display: block;
+  color: #87a3b8;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.research-icon {
+  color: #ada7e7;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #8d8cc744;
+  background: #7770bf12;
+}
+.lab-button {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  min-height: 42px;
+  padding: 8px 12px;
+  background: #334e4b;
+  border: 1px solid #9ad2c45c;
+  border-radius: 5px;
+  color: #c5f1df;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  transition:
+    background 0.18s,
+    border-color 0.18s;
+}
+.lab-button small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #a8c6bd;
+}
+.lab-button:hover:not(:disabled) {
+  background: #406663;
+  border-color: #b5ecda;
+}
+.lab-button:disabled {
+  cursor: not-allowed;
+  background: #1a2935;
+  color: #8195a4;
+  border-color: #8d9dab26;
+}
+.lab-button:disabled small {
+  color: #798e9f;
+}
+.lab-button.prominent {
+  background: linear-gradient(110deg, #547269, #314e60);
+  flex-direction: row;
+  border-color: #aae4d578;
+}
+.lab-button.prominent:disabled {
+  background: #263741;
+  border-color: #90a4b037;
+}
+.lab-button:focus-visible,
+.research-filters button:focus-visible,
+.set-picker button:focus-visible {
+  outline: 2px solid #d4caff;
+  outline-offset: 3px;
+}
+.dust-wallet {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 14px;
+}
+.dust-wallet > div {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--dust-color) 25%, transparent);
+  border-radius: 6px;
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--dust-color) 8%, transparent),
+    #10212c
+  );
+  min-width: 0;
+}
+.dust-wallet > div > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dust-color);
+  font-size: 13px;
+}
+.dust-wallet strong {
+  display: block;
+  color: #f1eff7;
+  font:
+    23px var(--font-geist-mono),
+    monospace;
+  margin: 7px 0 4px;
+}
+.dust-wallet small {
+  display: block;
+  color: #91a6b8;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.lab-card {
+  border: 1px solid #8697b73a;
+  padding: 16px;
+  border-radius: 9px;
+  margin: 0 0 15px;
+  background: linear-gradient(120deg, #192839e8, #122030e8);
+}
+.lab-card p {
+  font-size: 14px;
+  color: #a7b8c7;
+  line-height: 1.7;
+  margin: 10px 0 13px;
+}
+.lab-card > small {
+  color: #97abba;
+  font-size: 12px;
+  line-height: 1.7;
+  display: block;
+}
+.lab-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.lab-heading small {
+  font-size: 12px;
+  color: #a09bbc;
+}
+.lab-heading > div > small {
+  letter-spacing: 1.3px;
+}
+.conversion-card {
+  border-color: #a394ce40;
+  background:
+    radial-gradient(ellipse at right top, #55458630, transparent 60%), #142434;
+}
+.conversion-offer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin: 15px 0;
+}
+.conversion-offer > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #b2bfd0;
+}
+.conversion-offer strong {
+  color: #f4e7c8;
+  font:
+    20px var(--font-geist-mono),
+    monospace;
+}
+.conversion-offer button {
+  flex: none;
+}
+.conversion-meter {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid #aaa0c328;
+}
+.conversion-meter > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #a8bed0;
+}
+.conversion-meter b {
+  color: #9ee5d0;
+  font-weight: 500;
+}
+.conversion-meter progress {
+  width: 100%;
+  height: 5px;
+  margin: 9px 0 6px;
+  border: 0;
+  accent-color: #ad9bea;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #354052;
+}
+.conversion-meter progress::-webkit-progress-bar {
+  background: #354052;
+}
+.conversion-meter progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #ae93e3, #91e4ce);
+}
+.conversion-meter small {
+  font-size: 12px;
+  color: #89a59e;
+}
+.joker-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #92dabf30;
+  border-radius: 7px;
+  margin: 0 0 16px;
+  background: #1833304d;
+}
+.joker-toggle > span {
+  color: #c1d7cf;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.joker-toggle svg {
+  display: inline;
+  vertical-align: -3px;
+  margin-right: 6px;
+}
+.joker-toggle small {
+  display: block;
+  color: #8faa9f;
+  font-size: 12px;
+}
+.galaxy-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.constellation-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 3px 0 12px;
+}
+.constellation-summary small {
+  display: block;
+  color: #989dba;
+  font-size: 12px;
+}
+.constellation-summary h3 {
+  font-size: 20px;
+  font-weight: 500;
+  color: #e5e6f3;
+  margin: 6px 0 0;
+}
+.constellation-summary > span {
+  text-align: right;
+  color: #9eb0c3;
+  font-size: 14px;
+}
+.constellation-summary b {
+  font:
+    25px var(--font-geist-mono),
+    monospace;
+  color: #d7c7ff;
+}
+.set-picker {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 2px 0 9px;
+}
+.set-picker button {
+  flex: 1;
+  min-width: 30px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  color: #91a4b6;
+  border: 1px solid #90a9c431;
+  border-radius: 5px;
+  background: #102132;
+  font:
+    12px var(--font-geist-mono),
+    monospace;
+}
+.set-picker button[aria-pressed='true'] {
+  background: #65508070;
+  border-color: #c6a6fd83;
+  color: #f1e6ff;
+}
+.set-picker button.complete-set {
+  color: #ace4cd;
+  border-color: #8fd9b94a;
+}
+.star-map-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 0.85fr);
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #9e8bb641;
+  border-radius: 9px;
+  padding: 12px 16px;
+  background:
+    radial-gradient(ellipse at 30% 40%, #7772b333, transparent 65%), #101e2d;
+}
+.constellation-map {
+  width: 100%;
+  max-height: 180px;
+  overflow: visible;
+}
+.constellation-map line {
+  stroke: #6a7b934a;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+}
+.constellation-map line.lit {
+  stroke: #baa7e5;
+  stroke-dasharray: none;
+}
+.constellation-map circle {
+  fill: #52647b;
+  stroke: #aebdd142;
+  stroke-width: 1;
+}
+.constellation-map .star-halo {
+  fill: #4d587624;
+  stroke: #a1abcc25;
+}
+.constellation-map .lit circle:not(.star-halo) {
+  fill: #f5e6bc;
+  stroke: #ffe9a9;
+  filter: drop-shadow(0 0 6px #f3c582);
+}
+.constellation-map .lit .star-halo {
+  fill: #cfb67217;
+  stroke: #f4e4b348;
+}
+.constellation-map .next-star circle:not(.star-halo) {
+  fill: #c4b3ef;
+  filter: drop-shadow(0 0 7px #ac83f1);
+}
+.constellation-map text {
+  fill: #9dacc4;
+  font:
+    12px var(--font-geist-mono),
+    monospace;
+  text-anchor: middle;
+}
+.star-map-card small {
+  color: #b39dcf;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.star-map-card h3 {
+  color: #e9e3f7;
+  font-size: 19px;
+  margin: 6px 0 7px;
+}
+.star-map-card p {
+  color: #a7b1c8;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.star-map-card > div > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #bcb3d1;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.constellation-buffs {
+  display: flex;
+  gap: 20px;
+  padding: 13px 3px;
+  font-size: 13px;
+  color: #9fadc5;
+}
+.constellation-buffs b {
+  font-weight: 500;
+  margin-left: 5px;
+  color: #d5c6f1;
+}
+.unlock-milestones {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 16px;
+}
+.unlock-milestones > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #8497ad30;
+  border-radius: 6px;
+  padding: 7px;
+  background: #132435;
+  color: #8397ac;
+}
+.unlock-milestones .equipment-art {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  margin: 0;
+}
+.unlock-milestones > div > span:not(.equipment-art) {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+.unlock-milestones b {
+  display: block;
+  color: #9cacbe;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.unlock-milestones svg {
+  flex: none;
+}
+.unlock-milestones .unlocked {
+  border-color: #8ad1b957;
+  color: #b6e3ce;
+}
+.recipe-card .consumption-note {
+  color: #d7bb9a;
+  font-size: 13px;
+}
+.recipe-materials {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 14px;
+}
+.recipe-materials > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px;
+  border: 1px solid #718b9b2b;
+  border-radius: 5px;
+  padding: 9px 10px;
+  background: #10212d;
+}
+.recipe-materials span {
+  color: #a9bac9;
+  font-size: 13px;
+  grid-column: 1 / -1;
+}
+.recipe-materials b {
+  color: #b7d9cc;
+  font:
+    13px var(--font-geist-mono),
+    monospace;
+}
+.recipe-materials svg {
+  color: #a4d5be;
+}
+.recipe-materials .material-missing b,
+.recipe-materials .material-missing svg,
+.missing-cost {
+  color: #d99789;
+}
+.recipe-card .joker-toggle {
+  margin-bottom: 10px;
+}
+.joker-cost {
+  color: #a7e1cd !important;
+}
+.craft-button {
+  width: 100%;
+}
+.lucky-box {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.lucky-box > svg {
+  color: #dac08e;
+  flex: none;
+}
+.lucky-box > div {
+  flex: 1;
+  min-width: 0;
+}
+.lucky-box h3 b {
+  color: #e2c991;
+  font-size: 15px;
+}
+.lucky-box p {
+  margin: 5px 0 0;
+  font-size: 12px;
+}
+.lucky-box button {
+  min-width: 76px;
+}
+@media (min-width: 1200px) and (max-width: 1500px) {
+  .research-card {
+    grid-template-columns: 44px minmax(0, 1fr) 104px;
+    gap: 9px;
+    padding: 12px 10px;
+  }
+  .research-card .equipment-art {
+    width: 44px;
+    height: 44px;
+  }
+  .dust-wallet > div {
+    padding: 8px;
+  }
+  .dust-wallet > div > span {
+    gap: 3px;
+  }
+  .star-map-card {
+    grid-template-columns: minmax(0, 1fr) 190px;
+    gap: 10px;
+  }
+  .galaxy-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 650px) {
+  .equipment-shop .shop-tab-list button {
+    font-size: 13px;
+    padding: 8px 4px;
+    gap: 4px;
+  }
+  .equipment-shop .shop-tab-list button svg {
+    width: 13px;
+  }
+  .research-filters button {
+    font-size: 13px;
+    padding: 7px 8px;
+  }
+  .research-card {
+    grid-template-columns: 36px minmax(0, 1fr) 87px;
+    padding: 12px 8px;
+    gap: 8px;
+  }
+  .research-card .equipment-art {
+    width: 36px;
+    height: 36px;
+  }
+  .research-icon {
+    width: 34px;
+    height: 38px;
+  }
+  .research-copy h3 {
+    font-size: 14px;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .research-copy p {
+    font-size: 12px;
+  }
+  .lab-button {
+    font-size: 13px;
+    padding: 8px;
+  }
+  .dust-wallet {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dust-wallet > div:last-child {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dust-wallet strong {
+    font-size: 20px;
+  }
+  .lab-card {
+    padding: 12px;
+  }
+  .conversion-offer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .conversion-meter > span {
+    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .galaxy-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .constellation-summary h3 {
+    font-size: 17px;
+  }
+  .star-map-card {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .constellation-map {
+    max-height: 145px;
+  }
+  .star-map-card > div {
+    padding: 4px 0 7px;
+  }
+  .constellation-buffs {
+    gap: 10px;
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .unlock-milestones {
+    gap: 5px;
+  }
+  .unlock-milestones > div {
+    padding: 6px 3px;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+  .unlock-milestones > div > span:not(.equipment-art) {
+    flex-basis: 100%;
+  }
+  .unlock-milestones .equipment-art {
+    width: 32px;
+    height: 32px;
+  }
+  .recipe-card .lab-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .recipe-materials {
+    gap: 5px;
+  }
+  .recipe-materials span {
+    font-size: 12px;
+  }
+  .recipe-materials b {
+    font-size: 12px;
+  }
+  .lucky-box {
+    gap: 9px;
+  }
+}

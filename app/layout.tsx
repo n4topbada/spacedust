@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import './flight-console.css';
+import './expansion.css';
+import './progression.css';
+import './workshop.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -13,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '우주먼지 · SPACE DUST',
+  title: 'SPACE DUST · Cosmic Clicker',
   description:
-    '작은 클릭 하나로 시작되는 우주. SF 로봇과 먼지를 모으고, 혜성을 잡으며 블랙홀까지 성장하세요.',
+    'Build a universe from cosmic dust. Deploy 14 robotic collectors, catch comets and craft 15 constellations.',
 };
 
 export default function RootLayout({
@@ -24,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="dark">
+    <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -1,31 +1,40 @@
-# 우주먼지 · SPACE DUST
+# SPACE DUST
 
-먼지를 클릭해 수집하고 SF 로봇을 구매하며 블랙홀까지 성장하는 한국어 웹게임.
+An English cosmic clicker. Collect dust, deploy 14 robotic tools, catch comets and grow through 12 stages from cosmic dust to an entire universe.
 
-- 8단계 자동 진화, 6종 SF 수집 로봇, 클릭 강화와 군집 AI
-- 1대 / 10대 / 최대 구매, 10·25·50대 보유 시 생산 배율
-- 14초 동안 잡을 수 있는 혜성, 황금 혜성 보상 3배
-- 브라우저 자동 저장, 최대 8시간 오프라인 수집, 효과음과 움직임 줄이기
-- 데스크톱·모바일 대응, 키보드로 클릭과 구매 가능
+- 1800 × 750 desktop console with responsive mobile layout.
+- Click a tool row to buy 1, 10 or the maximum affordable quantity.
+- 28 exact ×2 tool upgrades, 12 synergies and three manual-click upgrades.
+- Full-screen Craft workshop with 15 unique constellations and 60 individual star recipes.
+- Four fixed conversion packages, five currencies, rare Spacedust and permanent upgrades.
+- Actual crafting material consumption, set bonuses, lucky boxes and late-tool unlocks.
+- Browser autosave, eight-hour offline collection, optional audio and reduced motion.
 
-## 실행
+## Development
 
-Node.js 24 권장. `npm ci` 후 `npm run dev`를 실행합니다.
+Use Node.js 24. Run npm ci, then npm run dev -- --hostname 127.0.0.1. The player-facing local address is http://localhost:3000/.
 
-## 검증
+Run npm test for game rules and migration checks, npx tsc --noEmit for types, and npm run build for the application build.
 
-`npm run test` — 구매, 시간 정산, 보너스 중복, 저장, 진화 테스트.
+## Main files
 
-`npx tsc --noEmit` — 타입 검사. `npm run build` — 배포용 빌드.
+- app/page.tsx: simulation clock, persistence and universe/workshop navigation.
+- components/tool-market.tsx: direct tool purchasing and research.
+- components/crafting-screen.tsx: full-width workshop shell.
+- components/constellation-workshop.tsx: selectable star diagrams and individual recipes.
+- components/progression-panels.tsx: research, currency packages and permanent shop.
+- lib/economy.ts: economic rules, transactions and save migration.
+- lib/catalog.ts: celestial stages and tool definitions.
+- lib/constellations.ts: 15 diagram geometries and variable star counts.
+- components/celestial-scene.tsx: animated cosmic scene, limited to 45 fps.
+- app/workshop.css: the new purchasing and crafting layout.
 
-`npm run lint`는 게임 소스와 테스트를 검사합니다. 제공된 미사용 UI 카탈로그는 검사 범위에서 제외합니다.
+The game reuses generated sprite sheets in public/celestials.png, cosmos.png, equipment.png and comets.png. Diagram SVGs represent selectable crafting nodes. No new artwork was needed for this revision.
 
-가로 화면은 1800×800 기준으로 천체와 2열·3행 로봇 격납고, 성장 여정, 탐사 기록이 스크롤 없이 표시됩니다.
+## Balance and saves
 
-상태와 경제 계산은 `lib/game.ts`, 게임 UI는 `app/page.tsx`, 스타일은 `app/globals.css`에 있습니다.
+See [the current workshop revision](docs/workshop-update.md) for current rules, conversion amounts, assumptions and version-4 migration. [The previous balance notes](docs/constellation-balance.md) document the September 11 baseline; the workshop revision takes precedence where values changed.
 
-## 게임 이미지
+Saves are local to each browser and origin. The key remains spacedust.save.v1. Old saves are backed up before migration, completed sets and earned bonuses are preserved, and the earlier one-time enhancement refund remains supported.
 
-`public/celestials.png` (4×2)와 `public/robots.png` (3×2)는 built-in imagegen으로 제작한 게임 전용 스프라이트 아틀라스입니다. 천체와 로봇 순서는 코드의 STAGES, ROBOTS와 같습니다.
-
-진행 상황은 이 기기의 브라우저에만 저장됩니다. 브라우저 저장 데이터를 삭제하면 진행 상황도 사라집니다. 실제 천체 진화와는 다른 판타지 설정입니다.
+Growth is a fantasy progression rather than an astrophysical simulation.

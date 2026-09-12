@@ -36,10 +36,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { ToolMarket } from '@/components/tool-market';
+import { CraftingScreen } from '@/components/crafting-screen';
+import { celestialStyle } from '@/lib/visuals';
 import { Switch } from '@/components/ui/switch';
+import { CelestialScene } from '@/components/celestial-scene';
 import {
   STAGES,
+  FINAL_STAGE,
+  RANKS,
+  normalizeName,
   ROBOTS,
   SAVE_KEY,
   freshState,
@@ -48,15 +55,16 @@ import {
   clickPower,
   settle,
   collect,
-  quote,
   buyRobot,
-  upgradePrice,
-  upgrade,
+  performAction,
+  cometDelay,
+  BACKUP_KEY,
+  WORKSHOP_BACKUP_KEY,
+  type GameAction,
   cometReward,
   claimComet,
   decodeSave,
   format,
-  robotRate,
   type GameState,
 } from '@/lib/game';
 
@@ -69,9 +77,6 @@ type Floater = {
   critical: boolean;
 };
 type Log = { id: number; text: string; time: string };
-const atlasStyle = (index: number, columns: number): CSSProperties => ({
-  backgroundPosition: `${((index % columns) / (columns - 1)) * 100}% ${Math.floor(index / columns) * 100}%`,
-});
 
 function Starfield({ reduced }: { reduced: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -133,9 +138,28 @@ export default function Home() {
   const [floaters, setFloaters] = useState<Floater[]>([]),
     [logs, setLogs] = useState<Log[]>([]);
   const [notice, setNotice] = useState(''),
-    [saveStatus, setSaveStatus] = useState('자동 저장 준비 중');
+    [saveStatus, setSaveStatus] = useState('Preparing autosave');
+  const [nameDraft, setNameDraft] = useState('');
+  const [screen, setScreen] = useState<'universe' | 'craft'>('universe');
+  useEffect(() => {
+    const sync = () =>
+      setScreen(location.hash === '#craft' ? 'craft' : 'universe');
+    sync();
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+  function navigateScreen(target: 'universe' | 'craft') {
+    location.hash = target === 'craft' ? 'craft' : 'universe';
+    setScreen(target);
+  }
   const [pulse, setPulse] = useState(0),
     [confirmReset, setConfirmReset] = useState(false);
+  const [capture, setCapture] = useState<{
+    id: number;
+    x: number;
+    y: number;
+    rare: boolean;
+  } | null>(null);
   const audio = useRef<AudioContext | null>(null),
     timers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const stage = stageIndex(game.mass),
@@ -163,7 +187,7 @@ export default function Home() {
         {
           id: Date.now() + Math.random(),
           text,
-          time: new Date().toLocaleTimeString('ko-KR', {
+          time: new Date().toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false,
@@ -188,9 +212,9 @@ export default function Home() {
       setGame(after);
       if (stageIndex(after.mass) > stageIndex(before.mass)) {
         const name = STAGES[stageIndex(after.mass)].name;
-        log(`${name} 진화 완료`);
-        notify(`${name} 탄생! 새로운 우주가 열렸습니다.`);
-        if (stageIndex(after.mass) === 7 && !before.completedAt)
+        log(`Evolved into ${name}`);
+        notify(`${name} formed! Your universe has evolved.`);
+        if (stageIndex(after.mass) === FINAL_STAGE && !before.completedAt)
           setModal('complete');
       }
       return after;
@@ -200,9 +224,9 @@ export default function Home() {
   const save = useCallback(() => {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(state.current));
-      setSaveStatus('자동 저장됨');
+      setSaveStatus('Autosaved');
     } catch {
-      setSaveStatus('저장 공간을 확인해 주세요');
+      setSaveStatus('Check browser storage');
     }
   }, []);
   useEffect(() => {
@@ -214,29 +238,56 @@ export default function Home() {
         saved = decodeSave(raw, now);
       if (saved) {
         initial = settle(saved, now);
+        if (JSON.parse(raw!).version < 4) {
+          try {
+            if (!localStorage.getItem(WORKSHOP_BACKUP_KEY))
+              localStorage.setItem(WORKSHOP_BACKUP_KEY, raw!);
+          } catch {
+            /* Preserve the current game even if backup storage is full. */
+          }
+        }
+        if (JSON.parse(raw!).version < 3) {
+          try {
+            if (!localStorage.getItem(BACKUP_KEY))
+              localStorage.setItem(BACKUP_KEY, raw!);
+          } catch {
+            /* Migration can still preserve the live save if backup storage is full. */
+          }
+          log(`Legacy upgrades refunded: ${format(saved.legacyRefund)} dust`);
+          later(
+            () =>
+              notify(
+                `Research and crafting are now available. Refunded ${format(saved.legacyRefund)} dust from old upgrades. Growth now takes more mass.`,
+              ),
+            1200,
+          );
+        }
         const offline = initial.dust - saved.dust;
         if (offline >= 1 && now - saved.updatedAt > 30_000) {
-          notify(`다시 오셨네요! 로봇들이 먼지 ${format(offline)}을 모았어요.`);
-          log(`자리 비움 수집 +${format(offline)}`);
+          notify(
+            `Welcome back! Your collectors gathered ${format(offline)} dust.`,
+          );
+          log(`Offline collection +${format(offline)}`);
         }
         if (!saved.completedAt && initial.completedAt) setModal('complete');
       } else if (raw)
-        notify('저장 데이터를 읽을 수 없어 새 우주를 시작합니다.');
+        notify('Unable to read the save. Starting a new universe.');
       else
         initial.reducedMotion = matchMedia(
           '(prefers-reduced-motion: reduce)',
         ).matches;
     } catch {
-      setSaveStatus('이 브라우저에서는 저장할 수 없어요');
+      setSaveStatus('Saving is unavailable in this browser');
     }
     state.current = initial;
     setGame(initial);
+    setNameDraft(initial.name);
     setReady(true);
     nextComet.current = now + 18_000;
     log(
       initial.mass
-        ? '탐사 재개 · 우주가 당신을 기다렸어요.'
-        : '탐사 시작 · 첫 번째 먼지를 모아보세요.',
+        ? 'Exploration resumed. Welcome back.'
+        : 'Exploration started. Collect your first dust.',
     );
     const tick = setInterval(() => {
       apply((s) => s);
@@ -245,7 +296,7 @@ export default function Home() {
       if (cometRef.current && t > cometRef.current.until) {
         cometRef.current = null;
         setComet(null);
-        nextComet.current = t + 40_000 + Math.random() * 35_000;
+        nextComet.current = t + cometDelay(state.current);
       }
       if (!cometRef.current && t >= nextComet.current) {
         const c = {
@@ -279,7 +330,7 @@ export default function Home() {
       void audio.current?.close();
       audio.current = null;
     };
-  }, [apply, log, notify, save]);
+  }, [apply, later, log, notify, save]);
 
   function tone(type: 'tap' | 'buy' | 'comet') {
     if (!state.current.sound) return;
@@ -334,41 +385,63 @@ export default function Home() {
       after = apply((s) => buyRobot(s, i, quantity));
     if (after.robots[i] > count) {
       tone('buy');
-      log(`${ROBOTS[i].name} +${after.robots[i] - count} 배치`);
+      log(`${ROBOTS[i].name}: +${after.robots[i] - count} deployed`);
       save();
     }
   }
-  function buyUpgrade(kind: 'click' | 'ai') {
-    const previous =
-        kind === 'click' ? state.current.clickLevel : state.current.aiLevel,
-      after = apply((s) => upgrade(s, kind));
-    if ((kind === 'click' ? after.clickLevel : after.aiLevel) > previous) {
-      tone('buy');
-      notify(
-        kind === 'click'
-          ? '탭봇 수집 팔 강화! 클릭 효율 ×1.75'
-          : '군집 AI 연결 완료! 모든 로봇 효율 ×1.5',
-      );
-      save();
+  function labAction(action: GameAction) {
+    if (!ready) return;
+    let message = '';
+    const oldStarLevel = state.current.specialLevels[0];
+    apply((s) => {
+      const result = performAction(s, action);
+      message = result.message;
+      return result.state;
+    });
+    if (
+      state.current.specialLevels[0] > oldStarLevel &&
+      Number.isFinite(nextComet.current)
+    ) {
+      nextComet.current =
+        Date.now() +
+        (Math.max(0, nextComet.current - Date.now()) *
+          (1 + oldStarLevel * 0.08)) /
+          (1 + state.current.specialLevels[0] * 0.08);
     }
+    tone('buy');
+    notify(message);
+    log(message);
+    save();
   }
-  function catchComet() {
+  function catchComet(event: MouseEvent<HTMLButtonElement>) {
     const c = cometRef.current;
     if (!c || Date.now() > c.until) return;
+    const flight = event.currentTarget.getBoundingClientRect();
+    const field = event.currentTarget.parentElement!.getBoundingClientRect();
+    setCapture({
+      id: c.id,
+      x: flight.left - field.left + flight.width * 0.7,
+      y: flight.top - field.top + flight.height * 0.56,
+      rare: c.rare,
+    });
+    later(() => setCapture(null), 1300);
     cometRef.current = null;
     setComet(null);
-    nextComet.current = Date.now() + 40_000 + Math.random() * 35_000;
+    nextComet.current = Date.now() + cometDelay(state.current);
     const reward = cometReward(settle(state.current), c.rare);
     apply((s) => claimComet(s, c.id, c.rare));
     tone('comet');
-    notify(`${c.rare ? '황금 혜성' : '혜성'} 포착! 먼지 +${format(reward)}`);
-    log(`혜성 보너스 +${format(reward)}`);
+    notify(
+      `${c.rare ? 'Golden comet' : 'Comet'} captured! Dust +${format(reward)}`,
+    );
+    log(`Comet bonus +${format(reward)}`);
     save();
   }
   function reset() {
     const fresh = freshState();
     fresh.sound = game.sound;
     fresh.reducedMotion = game.reducedMotion;
+    fresh.name = game.name;
     state.current = fresh;
     setGame(fresh);
     cometRef.current = null;
@@ -378,394 +451,407 @@ export default function Home() {
     setConfirmReset(false);
     setModal(null);
     save();
-    notify('새로운 우주가 시작되었습니다.');
+    notify('A new universe has begun.');
+  }
+  function commitName() {
+    const name = normalizeName(nameDraft);
+    setNameDraft(name);
+    apply((s) => ({ ...s, name }));
+    save();
   }
 
   return (
     <main
-      className={`game-shell ${game.reducedMotion ? 'reduce-motion' : ''}`}
+      className={`game-shell expanded-console ${screen === 'craft' ? 'in-workshop' : ''} ${game.reducedMotion ? 'reduce-motion' : ''}`}
       style={{ '--stage-color': current.color } as CSSProperties}
+      data-stage={stage}
     >
       <Starfield reduced={game.reducedMotion} />
-      <header className="topbar">
-        <div className="brand" aria-label="우주먼지">
-          <span className="brand-mark">
-            <Orbit size={29} strokeWidth={1.4} />
-          </span>
-          <span>
-            SPACE<span className="brand-light">DUST</span>
-            <small>우주먼지</small>
-          </span>
-        </div>
-        <div className="mission-label">
-          <span className="live-dot" /> 나만의 작은 우주{' '}
-          <span className="slash">/</span> EXPEDITION 001
-        </div>
-        <div className="header-actions">
-          <span className="save-state">
-            <Check size={13} />
-            {saveStatus}
-          </span>
-          <button
-            className="icon-button"
-            aria-label={game.sound ? '소리 끄기' : '소리 켜기'}
-            title={game.sound ? '소리 끄기' : '소리 켜기'}
-            onClick={() => {
-              apply((s) => ({ ...s, sound: !s.sound }));
-              save();
-            }}
-          >
-            {game.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
-          </button>
-          <button
-            className="icon-button"
-            aria-label="게임 도움말"
-            onClick={() => setModal('help')}
-          >
-            <CircleHelp size={18} />
-          </button>
-          <button
-            className="icon-button"
-            aria-label="설정"
-            onClick={() => setModal('settings')}
-          >
-            <Settings2 size={18} />
-          </button>
-        </div>
-      </header>
-      <div className="game-layout">
-        <section className="universe" aria-label="우주 수집 화면">
-          <div className="universe-top">
-            <span className="eyebrow">
-              <span className="live-dot" /> DEEP SPACE · SECTOR 001
-            </span>
-            <span className="coordinates">
-              RA 23h 08m <span>DEC +61° 32′</span>
-            </span>
-          </div>
-          <div className="resource-display">
-            <span className="resource-label">보유 우주먼지</span>
-            <h1 data-testid="dust">
-              {format(game.dust)}
-              <span> dust</span>
-            </h1>
-            <div className="rate-pills">
-              <span>
-                <Hand size={14} /> 클릭당 <b>+{format(power)}</b>
+      {screen === 'universe' ? (
+        <>
+          <header className="topbar">
+            <div className="brand" aria-label="SPACE DUST">
+              <span className="brand-mark">
+                <Orbit size={29} strokeWidth={1.4} />
               </span>
               <span>
-                <Zap size={14} /> 초당 <b>+{format(dps)}</b>
+                SPACE<span className="brand-light">DUST</span>
+                <small>SPACE DUST</small>
               </span>
             </div>
-          </div>
-          <div className={`celestial-area stage-${stage}`}>
-            <div className="orbit-ring orbit-one" />
-            <div className="orbit-ring orbit-two" />
-            <div className="orbit-ring orbit-three" />
-            <span className="orbit-tag">
-              <Crosshair size={12} /> MASS {format(game.mass)}
-            </span>
-            <button
-              className="collect-target"
-              onClick={tap}
-              disabled={!ready}
-              aria-label={`먼지 수집, 클릭당 ${format(power)}`}
+            <form
+              className="universe-name"
+              onSubmit={(event) => {
+                event.preventDefault();
+                commitName();
+              }}
             >
-              <span className="celestial-glow" />
-              <span
-                className="celestial-sprite"
-                style={{
-                  ...atlasStyle(stage, 4),
-                  width: `${Math.min(95, 67 + stage * 3 + progress * 0.08)}%`,
-                }}
+              <label htmlFor="universe-name">Universe name</label>
+              <Input
+                id="universe-name"
+                value={nameDraft}
+                maxLength={48}
+                placeholder="Name your universe"
+                disabled={!ready}
+                onChange={(event) => setNameDraft(event.target.value)}
+                onBlur={commitName}
+                autoComplete="off"
               />
-              <span key={pulse} className={pulse ? 'click-ripple' : ''} />
-              {floaters.map((f) => (
-                <span
-                  className={`floating-reward ${f.critical ? 'critical' : ''}`}
-                  key={f.id}
-                  style={{ left: f.x, top: f.y }}
-                >
-                  {f.text}
-                </span>
-              ))}
-            </button>
-            {robotsOwned > 0 && (
-              <div className="satellite-orbit" aria-hidden="true">
-                <span className="satellite">
-                  <Bot size={21} />
-                </span>
-              </div>
-            )}
-            <span className="scale-mark">
-              {stage === 0
-                ? '미세 입자 관측 중'
-                : stage < 4
-                  ? '중력장 형성 중'
-                  : stage < 7
-                    ? '고밀도 에너지 감지'
-                    : '사건의 지평선 관측 중'}
-            </span>
-          </div>
-          <div className="celestial-caption">
-            <span className="stage-tag">
-              PHASE {String(stage + 1).padStart(2, '0')}
-            </span>
-            <h2>{current.name}</h2>
-            <p>{current.description}</p>
-            <div className="tap-hint">
-              <Hand size={15} /> 천체를 클릭해서 먼지를 모으세요{' '}
-              <span>+{format(power)}</span>
-            </div>
-          </div>
-          <div className="evolution-panel">
-            <div className="evolution-heading">
-              <span>
-                <Orbit size={16} /> 다음 진화{' '}
-                <strong>{next?.name ?? '우주의 끝, 새로운 시작'}</strong>
+              <button
+                type="submit"
+                aria-label="Save universe name"
+                disabled={!ready}
+              >
+                <Check size={16} />
+              </button>
+            </form>
+            <div
+              className="mission-label rank-display"
+              aria-label={`Growth rank ${stage + 1}, ${RANKS[stage]}`}
+            >
+              <span className="rank-number">
+                {String(stage + 1).padStart(2, '0')}
               </span>
-              <span>
-                {next
-                  ? `${format(game.mass)} / ${format(next.mass)}`
-                  : 'COMPLETE'}{' '}
-                <b>{Math.floor(progress)}%</b>
+              <span className="rank-copy">
+                <small>Growth rank</small>
+                <strong>{RANKS[stage]}</strong>
+              </span>
+              <span className="header-segments" aria-hidden="true">
+                {STAGES.map((s, i) => (
+                  <i key={s.en} className={i <= stage ? 'lit' : ''} />
+                ))}
               </span>
             </div>
-            <Progress value={progress} aria-label="다음 천체 진화까지 진행률" />
-            <div className="evolution-foot">
-              <span>
-                {next
-                  ? `먼지 ${format(Math.max(0, next.mass - game.mass))}을 더 모으면 진화합니다`
-                  : '블랙홀이 되었습니다. 우주는 계속 성장합니다.'}
+            <div className="header-actions">
+              <span className="save-state">
+                <Check size={13} />
+                {saveStatus}
               </span>
-              <button onClick={() => setModal('journey')}>
-                성장 여정 <ArrowRight size={13} />
+              <button
+                className="icon-button"
+                aria-label={game.sound ? 'Mute sound' : 'Enable sound'}
+                title={game.sound ? 'Mute sound' : 'Enable sound'}
+                onClick={() => {
+                  apply((s) => ({ ...s, sound: !s.sound }));
+                  save();
+                }}
+              >
+                {game.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+              </button>
+              <button
+                className="icon-button"
+                aria-label="How to play"
+                onClick={() => setModal('help')}
+              >
+                <CircleHelp size={18} />
+              </button>
+              <button
+                className="icon-button"
+                aria-label="Settings"
+                onClick={() => setModal('settings')}
+              >
+                <Settings2 size={18} />
               </button>
             </div>
-          </div>
-          {comet && (
-            <button
-              className={`comet ${comet.rare ? 'rare' : ''}`}
-              style={{ top: `${comet.lane}%` }}
-              onClick={catchComet}
-              aria-label={
-                comet.rare ? '황금 혜성 보너스 받기' : '혜성 보너스 받기'
-              }
-            >
-              <span className="comet-tail" />
-              <Sparkles size={27} />
-              <span className="comet-label">
-                {comet.rare ? '황금 혜성 · 보상 3배' : '혜성 발견! 클릭'}
-                <b>+{format(cometReward(game, comet.rare))}</b>
-              </span>
-            </button>
-          )}
-        </section>
-        <aside className="hangar" aria-label="로봇 구매와 업그레이드">
-          <div className="hangar-title">
-            <div>
-              <span className="eyebrow">YOUR LITTLE SPACE CREW</span>
-              <h2>
-                로봇 격납고 <span>{robotsOwned}</span>
-              </h2>
-            </div>
-            <Bot size={25} strokeWidth={1.3} />
-          </div>
-          <p className="hangar-intro">작은 동료들과, 더 큰 우주로.</p>
-          <Tabs defaultValue="robots" className="shop-tabs">
-            <TabsList className="shop-tab-list">
-              <TabsTrigger value="robots">
-                <Bot size={15} /> 수집 로봇
-              </TabsTrigger>
-              <TabsTrigger value="upgrades">
-                <Zap size={15} /> 성능 강화
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="robots">
-              <div className="purchase-toolbar">
-                <span>자동으로 먼지를 수집합니다</span>
-                <div className="quantity-options" aria-label="구매 수량">
-                  {([1, 10, 'max'] as const).map((q) => (
-                    <button
-                      key={q}
-                      aria-pressed={quantity === q}
-                      className={quantity === q ? 'active' : ''}
-                      onClick={() => setQuantity(q)}
-                    >
-                      {q === 'max' ? '최대' : `×${q}`}
-                    </button>
-                  ))}
+          </header>
+          <div className="game-layout">
+            <section className="universe" aria-label="Universe collection area">
+              <div className="universe-top">
+                <span className="eyebrow">
+                  <span className="live-dot" /> DEEP SPACE · SECTOR 001
+                </span>
+                <span className="coordinates">
+                  RA 23h 08m <span>DEC +61° 32′</span>
+                </span>
+              </div>
+              <div className="resource-display">
+                <span className="resource-label">AVAILABLE DUST</span>
+                <h1 data-testid="dust">
+                  {format(game.dust)}
+                  <span> dust</span>
+                </h1>
+                <div className="rate-pills">
+                  <span>
+                    <Hand size={14} /> Per click <b>+{format(power)}</b>
+                  </span>
+                  <span>
+                    <Zap size={14} /> Per second <b>+{format(dps)}</b>
+                  </span>
                 </div>
               </div>
-              <div className="robot-list">
-                {ROBOTS.map((robot, i) => {
-                  const locked = game.mass < robot.unlock,
-                    offer = quote(game, i, quantity),
-                    affordable = offer.count > 0 && offer.cost <= game.dust;
-                  return (
-                    <article
-                      key={robot.id}
-                      className={`robot-card ${locked ? 'locked' : ''} ${!locked && affordable ? 'affordable' : ''}`}
+              <div className={`celestial-area stage-${stage}`}>
+                <CelestialScene
+                  stage={stage}
+                  progress={progress}
+                  pulse={pulse}
+                  comets={game.comets}
+                  robots={game.robots}
+                  reduced={game.reducedMotion}
+                />
+                <div className="target-reticle" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <span className="orbit-tag">
+                  <Crosshair size={12} /> MASS {format(game.mass)}
+                </span>
+                <div className="scene-identity" aria-hidden="true">
+                  <span className="eyebrow">CELESTIAL SIGNATURE</span>
+                  <strong>{current.en}</strong>
+                  <span className="identity-rule" />
+                  <span>
+                    Target <b>SD–{String(stage + 1).padStart(3, '0')}</b>
+                  </span>
+                  <span>
+                    Growth stage{' '}
+                    <b>
+                      {String(stage + 1).padStart(2, '0')} / {STAGES.length}
+                    </b>
+                  </span>
+                  <div className="signal-wave">
+                    {Array.from({ length: 22 }, (_, i) => (
+                      <i
+                        key={i}
+                        style={
+                          {
+                            '--bar': `${10 + ((i * 13 + stage * 7) % 24)}px`,
+                            '--delay': `${i * -0.13}s`,
+                          } as CSSProperties
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="network-readout">
+                  <span className="eyebrow">
+                    <Radio size={12} /> Collection network
+                  </span>
+                  <div className="network-count">
+                    {robotsOwned}
+                    <small> UNITS</small>
+                  </div>
+                  <div
+                    className="network-bars"
+                    aria-label="Owned units by tool"
+                  >
+                    {ROBOTS.map((robot, i) => (
+                      <span
+                        key={robot.id}
+                        title={`${robot.name} ${game.robots[i]} units`}
+                      >
+                        <i
+                          style={{
+                            height: `${Math.min(100, 8 + Math.log2(game.robots[i] + 1) * 15)}%`,
+                          }}
+                          className={game.robots[i] > 0 ? 'online' : ''}
+                        />
+                        <b>{String(i + 1).padStart(2, '0')}</b>
+                      </span>
+                    ))}
+                  </div>
+                  <span className="network-status">
+                    <span className="live-dot" />
+                    {robotsOwned > 0
+                      ? 'Collection network online'
+                      : 'Awaiting your first collector'}
+                  </span>
+                </div>
+                <button
+                  className="collect-target"
+                  onClick={tap}
+                  disabled={!ready}
+                  aria-label={`Collect dust, per click ${format(power)}`}
+                >
+                  <span className="collect-focus" aria-hidden="true" />
+                  {floaters.map((f) => (
+                    <span
+                      className={`floating-reward ${f.critical ? 'critical' : ''}`}
+                      key={f.id}
+                      style={{ left: f.x, top: f.y }}
                     >
-                      <div
-                        className="robot-art"
-                        style={atlasStyle(i, 3)}
+                      {f.text}
+                    </span>
+                  ))}
+                </button>
+                <span className="scale-mark">
+                  {stage === 0
+                    ? 'PARTICLE FIELD DETECTED'
+                    : stage < 4
+                      ? 'GRAVITATIONAL FIELD FORMING'
+                      : stage < 7
+                        ? 'HIGH ENERGY DENSITY'
+                        : stage === 7
+                          ? 'EVENT HORIZON DETECTED'
+                          : stage < 11
+                            ? 'GALACTIC STRUCTURE DETECTED'
+                            : 'UNIVERSAL STRUCTURE MAPPED'}
+                </span>
+              </div>
+              <div key={stage} className="celestial-caption stage-arrival">
+                <span className="stage-tag">
+                  PHASE {String(stage + 1).padStart(2, '0')}
+                </span>
+                <h2>{current.name}</h2>
+                <p>{current.description}</p>
+                <div className="tap-hint">
+                  <Hand size={15} /> Click to collect cosmic dust{' '}
+                  <span>+{format(power)}</span>
+                </div>
+              </div>
+              <div className="evolution-panel">
+                <div className="evolution-heading">
+                  <span>
+                    <Orbit size={16} /> Next evolution{' '}
+                    <strong>{next?.name ?? 'A new beginning'}</strong>
+                  </span>
+                  <span>
+                    {next
+                      ? `${format(game.mass)} / ${format(next.mass)}`
+                      : 'COMPLETE'}{' '}
+                    <b>{Math.floor(progress)}%</b>
+                  </span>
+                </div>
+                <Progress
+                  value={progress}
+                  aria-label="Progress to next evolution"
+                />
+                <div className="evolution-foot">
+                  <span>
+                    {next
+                      ? `Collect ${format(Math.max(0, next.mass - game.mass))} more dust to evolve`
+                      : 'The universe is complete. Your collectors can keep going.'}
+                  </span>
+                  <button onClick={() => setModal('journey')}>
+                    Growth journey <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+              {comet && (
+                <button
+                  className={`comet ${comet.rare ? 'rare' : ''}`}
+                  key={comet.id}
+                  style={{ top: `${comet.lane}%` }}
+                  onClick={catchComet}
+                  aria-label={
+                    comet.rare ? 'Capture golden comet' : 'Capture comet'
+                  }
+                >
+                  <span className="comet-flight-line" aria-hidden="true" />
+                  <span className="comet-sprite" aria-hidden="true" />
+                  <span className="comet-core-ring" aria-hidden="true" />
+                  <span className="comet-sparkles" aria-hidden="true">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <i key={i} style={{ '--i': i } as CSSProperties} />
+                    ))}
+                  </span>
+                </button>
+              )}
+              {capture && (
+                <div
+                  key={capture.id}
+                  className={`comet-capture ${capture.rare ? 'golden' : ''}`}
+                  style={{ left: capture.x, top: capture.y }}
+                  aria-hidden="true"
+                >
+                  <span />
+                  {Array.from({ length: 18 }, (_, i) => (
+                    <i
+                      key={i}
+                      style={
+                        {
+                          '--angle': `${i * 20}deg`,
+                          '--distance': `${45 + (i % 4) * 18}px`,
+                        } as CSSProperties
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+            <ToolMarket
+              game={game}
+              quantity={quantity}
+              onQuantity={setQuantity}
+              onPurchase={purchase}
+              onAction={labAction}
+              onCraft={() => navigateScreen('craft')}
+            />
+          </div>
+          <section className="bottom-deck">
+            <div className="journey-strip">
+              <div className="deck-heading">
+                <span className="eyebrow">A UNIVERSE IN THE MAKING</span>
+                <button onClick={() => setModal('journey')}>
+                  Growth journey <ChevronRight size={14} />
+                </button>
+              </div>
+              <div className="phase-track">
+                {STAGES.map((s, i) => (
+                  <button
+                    className={`phase-stop ${i === stage ? 'current' : ''} ${i < stage ? 'achieved' : ''}`}
+                    key={s.en}
+                    onClick={() => setModal('journey')}
+                    aria-label={`${s.name}, ${i <= stage ? 'reached' : format(s.mass) + ' mass required'}`}
+                  >
+                    <span className="phase-node">
+                      <span
+                        className="phase-thumbnail celestial-sprite"
+                        style={celestialStyle(i)}
                         aria-hidden="true"
                       />
-                      <div className="robot-info">
-                        <div className="robot-model">
-                          {robot.model}
-                          <span>
-                            {locked ? (
-                              <LockKeyhole size={11} />
-                            ) : (
-                              `보유 ${game.robots[i]}`
-                            )}
-                          </span>
-                        </div>
-                        <h3>{robot.name}</h3>
-                        <p>
-                          {locked
-                            ? `${format(robot.unlock)} 누적 질량에 해금`
-                            : robot.desc}
-                        </p>
-                        <div className="robot-bottom">
-                          <span className="robot-output">
-                            <Zap size={12} />
-                            {game.robots[i]
-                              ? format(robotRate(game, i))
-                              : format(robot.rate * 1.5 ** game.aiLevel)}
-                            <small> /초{game.robots[i] ? ' · 합계' : ''}</small>
-                          </span>
-                          <button
-                            onClick={() => purchase(i)}
-                            disabled={locked || !affordable}
-                            aria-label={`${robot.name} ${offer.count || 1}대 구매, 먼지 ${format(offer.cost || robot.base)}`}
-                          >
-                            <Sparkles size={12} />{' '}
-                            {locked
-                              ? '잠김'
-                              : quantity === 'max' && !offer.count
-                                ? '먼지 부족'
-                                : format(offer.cost)}
-                            {!locked && (
-                              <span>
-                                {quantity === 'max' && offer.count > 0
-                                  ? `×${offer.count}`
-                                  : '+'}
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-              <div className="hangar-tip">
-                <Radio size={16} />
-                <span>
-                  로봇 10 · 25 · 50대마다 수집 효율이 <b>2배</b>가 됩니다.
-                </span>
-              </div>
-            </TabsContent>
-            <TabsContent value="upgrades">
-              <div className="upgrade-intro">동료들의 잠재력을 깨워보세요.</div>
-              {(['click', 'ai'] as const).map((kind, i) => (
-                <article className="upgrade-card" key={kind}>
-                  <div className="upgrade-icon">
-                    {i === 0 ? <Hand size={28} /> : <Radio size={28} />}
-                  </div>
-                  <span className="eyebrow">
-                    {i === 0 ? 'TAP–BOT' : 'SWARM–LINK'} · LV.
-                    {i === 0 ? game.clickLevel : game.aiLevel}
-                  </span>
-                  <h3>{i === 0 ? '탭봇 수집 팔 강화' : '로봇 군집 AI'}</h3>
-                  <p>
-                    {i === 0
-                      ? '클릭 한 번에 더 많은 먼지를. 클릭 효율 ×1.75'
-                      : '모든 수집 로봇이 함께 학습합니다. 자동 수집 ×1.5'}
-                  </p>
-                  <button
-                    className="primary-button"
-                    disabled={
-                      game.dust < upgradePrice(game, kind) ||
-                      (i === 1 && game.mass < 1000) ||
-                      (i === 0 ? game.clickLevel : game.aiLevel) >= 50
-                    }
-                    onClick={() => buyUpgrade(kind)}
-                  >
-                    <Sparkles size={15} />
-                    {(i === 0 ? game.clickLevel : game.aiLevel) >= 50
-                      ? '최대 레벨'
-                      : i === 1 && game.mass < 1000
-                        ? '소행성 단계에 해금'
-                        : `${format(upgradePrice(game, kind))} 먼지로 강화`}
-                    <ArrowRight size={16} />
+                      {i < stage ? (
+                        <Check size={12} />
+                      ) : i === stage ? (
+                        <span />
+                      ) : (
+                        <LockKeyhole size={10} />
+                      )}
+                    </span>
+                    <span>{s.name}</span>
                   </button>
-                </article>
-              ))}
-            </TabsContent>
-          </Tabs>
-        </aside>
-      </div>
-      <section className="bottom-deck">
-        <div className="journey-strip">
-          <div className="deck-heading">
-            <span className="eyebrow">A UNIVERSE IN THE MAKING</span>
-            <button onClick={() => setModal('journey')}>
-              나의 성장 여정 <ChevronRight size={14} />
-            </button>
-          </div>
-          <div className="phase-track">
-            {STAGES.map((s, i) => (
-              <button
-                className={`phase-stop ${i === stage ? 'current' : ''} ${i < stage ? 'achieved' : ''}`}
-                key={s.en}
-                onClick={() => setModal('journey')}
-                aria-label={`${s.name}, ${i <= stage ? '도달' : format(s.mass) + ' 질량 필요'}`}
-              >
-                <span className="phase-node">
-                  {i < stage ? (
-                    <Check size={12} />
-                  ) : i === stage ? (
-                    <span />
-                  ) : (
-                    <LockKeyhole size={10} />
-                  )}
-                </span>
-                <span>{s.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="mission-log">
-          <div className="deck-heading">
-            <span className="eyebrow">탐사 기록</span>
-            <Radio size={13} />
-          </div>
-          {logs.slice(0, 2).map((item) => (
-            <div className="log-line" key={item.id}>
-              <time>{item.time}</time>
-              <span>{item.text}</span>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="mission-log">
+              <div className="deck-heading">
+                <span className="eyebrow">MISSION LOG</span>
+                <Radio size={13} />
+              </div>
+              {logs.slice(0, 2).map((item) => (
+                <div className="log-line" key={item.id}>
+                  <time>{item.time}</time>
+                  <span title={item.text}>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        <CraftingScreen
+          game={game}
+          onAction={labAction}
+          onBack={() => navigateScreen('universe')}
+        />
+      )}
       <footer className="footer">
         <span>
           <span className="live-dot" /> ALL SYSTEMS NOMINAL
         </span>
-        <span>작은 클릭 하나로 시작되는 우주.</span>
+        <span>A universe begins with one click.</span>
         <span>
-          <Disc3 size={12} /> 누적 질량 {format(game.mass)}
+          <Disc3 size={12} /> Total mass {format(game.mass)}
         </span>
       </footer>
       {notice && (
         <output className="game-notice" aria-live="polite">
           <Sparkles size={18} />
           <span>{notice}</span>
-          <button aria-label="알림 닫기" onClick={() => setNotice('')}>
+          <button
+            aria-label="Dismiss notification"
+            onClick={() => setNotice('')}
+          >
             <X size={14} />
           </button>
         </output>
@@ -780,67 +866,79 @@ export default function Home() {
         }}
       >
         <DialogContent
-          className={`game-dialog ${modal === 'journey' ? 'journey-dialog' : ''}`}
+          className={`game-dialog expanded-dialog ${modal === 'journey' ? 'journey-dialog' : ''}`}
         >
           <DialogTitle>
             {modal === 'settings'
-              ? '우주 환경 설정'
+              ? 'Universe settings'
               : modal === 'journey'
-                ? '먼지에서, 무한으로'
+                ? 'From dust to infinity'
                 : modal === 'complete'
-                  ? '당신의 우주가 블랙홀이 되었습니다'
-                  : '작은 우주를 키우는 방법'}
+                  ? 'Your universe is complete'
+                  : 'How to grow your universe'}
           </DialogTitle>
           <DialogDescription>
             {modal === 'settings'
-              ? '편안한 속도로 우주를 탐험하세요.'
+              ? 'Set your sound and motion preferences.'
               : modal === 'journey'
-                ? '누적 질량이 쌓이면 천체가 자동으로 진화합니다.'
+                ? 'Your celestial body evolves as total mass increases.'
                 : modal === 'complete'
-                  ? '첫 번째 여정 완료. 한 알의 먼지에서 모든 빛을 품는 존재로.'
-                  : '클릭하고, 동료를 모으고, 새로운 천체를 만나보세요.'}
+                  ? 'From dust to galaxies to an entire universe. All twelve stages are complete.'
+                  : 'Collect dust, deploy robotic tools and discover new celestial forms.'}
           </DialogDescription>
           {modal === 'help' && (
             <div className="help-content">
               <p>
                 <Hand />
                 <span>
-                  <b>천체를 클릭해 먼지를 모으세요.</b>가끔 강력한 클릭이 발생해
-                  5배의 먼지를 얻습니다. Tab으로 천체를 선택한 뒤 Enter나
-                  Space도 사용할 수 있어요.
+                  <b>Click the celestial body to collect dust.</b>Critical
+                  clicks give ×5 dust. You can also focus it with Tab and press
+                  Enter or Space.
                 </span>
               </p>
               <p>
                 <Bot />
                 <span>
-                  <b>SF 로봇을 구매하고 강화하세요.</b>로봇은 자동 수집, 탭봇
-                  강화는 클릭을 도와요. 구매해도 누적 질량과 성장 단계는
-                  줄어들지 않아요.
+                  <b>Click a tool to purchase it.</b>Collectors produce dust
+                  automatically. Research improves tools and manual clicks.
+                  Spending dust never reduces your total growth mass.
                 </span>
               </p>
               <p>
                 <Sparkles />
                 <span>
-                  <b>지나가는 혜성을 놓치지 마세요.</b>혜성을 누르면 성장 규모에
-                  맞는 먼지를 얻어요. 황금 혜성은 보상이 3배! 나타난 뒤 14초
-                  동안 잡을 수 있어요.
+                  <b>Catch passing comets.</b>Rewards scale with your growth.
+                  Golden comets give ×3 rewards. Each comet stays for 14
+                  seconds.
                 </span>
               </p>
               <p>
                 <Telescope />
                 <span>
-                  <b>이 브라우저에 자동 저장됩니다.</b>떠나 있는 동안에도 최대
-                  8시간의 로봇 수집량을 받아요. 다른 기기와는 공유되지 않습니다.
+                  <b>Your game saves in this browser.</b>Collectors earn up to 8
+                  hours of offline production. Saves do not sync across devices.
                 </span>
               </p>
-              <small>천체의 진화는 재미를 위한 판타지 우주 설정입니다.</small>
+              <p>
+                <Orbit />
+                <span>
+                  <b>Open Craft to build constellations.</b>Each star consumes
+                  the displayed materials. Complete 5, 10 and 15 constellations
+                  to unlock the last three tools. Growth rewards add mass, not
+                  spendable dust.
+                </span>
+              </p>
+              <small>
+                Celestial evolution is a fantasy progression created for this
+                game.
+              </small>
             </div>
           )}
           {modal === 'settings' && (
             <div className="settings-content">
               <label htmlFor="sound-toggle">
                 <span>
-                  <Volume2 size={18} /> 효과음
+                  <Volume2 size={18} /> Sound effects
                 </span>
                 <Switch
                   id="sound-toggle"
@@ -849,12 +947,12 @@ export default function Home() {
                     apply((s) => ({ ...s, sound: checked }));
                     save();
                   }}
-                  aria-label="효과음"
+                  aria-label="Sound effects"
                 />
               </label>
               <label htmlFor="motion-toggle">
                 <span>
-                  <AudioLines size={18} /> 움직임 줄이기
+                  <AudioLines size={18} /> Reduce motion
                 </span>
                 <Switch
                   id="motion-toggle"
@@ -863,58 +961,58 @@ export default function Home() {
                     apply((s) => ({ ...s, reducedMotion: checked }));
                     save();
                   }}
-                  aria-label="움직임 줄이기"
+                  aria-label="Reduce motion"
                 />
               </label>
               <div className="stats-grid">
                 <div>
-                  <span>총 클릭</span>
+                  <span>Total clicks</span>
                   <b>{format(game.clicks, 0)}</b>
                 </div>
                 <div>
-                  <span>잡은 혜성</span>
+                  <span>Comets captured</span>
                   <b>{game.comets}</b>
                 </div>
                 <div>
-                  <span>수집 로봇</span>
+                  <span>Collectors</span>
                   <b>{robotsOwned}</b>
                 </div>
                 <div>
-                  <span>탐사 시간</span>
-                  <b>{Math.floor(game.playSeconds / 60)}분</b>
+                  <span>Time explored</span>
+                  <b>{Math.floor(game.playSeconds / 60)} min</b>
                 </div>
               </div>
               <button
                 className="secondary-button"
                 onClick={() => {
                   save();
-                  notify('현재 우주를 저장했습니다.');
+                  notify('Your universe has been saved.');
                 }}
               >
-                지금 저장하기
+                Save now
               </button>
               <div className="reset-area">
                 {confirmReset ? (
                   <>
                     <p>
-                      모든 먼지와 로봇, 성장 기록이 지워집니다. 새 우주를
-                      시작할까요?
+                      All dust, tools and progress will be erased. Start a new
+                      universe?
                     </p>
                     <div>
                       <button className="danger-button" onClick={reset}>
-                        기록 삭제 후 시작
+                        Erase progress and restart
                       </button>
                       <button
                         className="secondary-button"
                         onClick={() => setConfirmReset(false)}
                       >
-                        취소
+                        Cancel
                       </button>
                     </div>
                   </>
                 ) : (
                   <button onClick={() => setConfirmReset(true)}>
-                    처음부터 다시 시작
+                    Start over
                   </button>
                 )}
               </div>
@@ -926,11 +1024,13 @@ export default function Home() {
                 <div key={s.en} className={i > stage ? 'undiscovered' : ''}>
                   <div
                     className="journey-art celestial-sprite"
-                    style={atlasStyle(i, 4)}
+                    style={celestialStyle(i)}
                   />
-                  <span className="eyebrow">PHASE 0{i + 1}</span>
+                  <span className="eyebrow">
+                    PHASE {String(i + 1).padStart(2, '0')}
+                  </span>
                   <h3>{s.name}</h3>
-                  <p>{i <= stage ? '발견 완료' : `${format(s.mass)} 질량`}</p>
+                  <p>{i <= stage ? 'Discovered' : `${format(s.mass)} mass`}</p>
                 </div>
               ))}
             </div>
@@ -939,14 +1039,14 @@ export default function Home() {
             <div className="completion">
               <div
                 className="completion-art celestial-sprite"
-                style={atlasStyle(7, 4)}
+                style={celestialStyle(FINAL_STAGE)}
               />
               <p>
-                로봇 {robotsOwned}대 · 클릭 {format(game.clicks, 0)}회 · 혜성{' '}
-                {game.comets}개
+                {robotsOwned} tools · {format(game.clicks, 0)} clicks ·{' '}
+                {game.comets} comets
               </p>
               <button className="primary-button" onClick={() => setModal(null)}>
-                계속 우주 키우기 <ArrowRight size={17} />
+                Keep growing <ArrowRight size={17} />
               </button>
             </div>
           )}

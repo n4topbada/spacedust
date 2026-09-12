@@ -880,7 +880,7 @@ button {
   border-color: #8de7d0;
   box-shadow: 0 0 13px #8de7d026;
 }
-.current .phase-node > span {
+.current .phase-node > span:not(.phase-thumbnail) {
   width: 7px;
   height: 7px;
   border-radius: 50%;
