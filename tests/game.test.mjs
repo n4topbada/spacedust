@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   freshState,
   earn,
-  gainMass,
   collect,
   buyRobot,
   quote,

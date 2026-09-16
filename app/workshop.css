@@ -60,8 +60,13 @@
 .tool-purchase-row:disabled {
   cursor: not-allowed;
 }
-.tool-purchase-row:disabled .tool-price b { color: #92a5b0; }
-.tool-market-list:focus-visible { outline: 2px solid #8eedd1; outline-offset: -2px; }
+.tool-purchase-row:disabled .tool-price b {
+  color: #92a5b0;
+}
+.tool-market-list:focus-visible {
+  outline: 2px solid #8eedd1;
+  outline-offset: -2px;
+}
 .tool-purchase-row.locked {
   opacity: 0.48;
 }

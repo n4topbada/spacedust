@@ -1,5 +1,6 @@
 'use client';
 /* oxlint-disable jsx-a11y/no-noninteractive-tabindex -- This named crafting region must stay keyboard-scrollable when actions are disabled. */
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- SVG maps and keyboard-operable SVG stars require explicit group/button roles; HTML controls cannot replace their SVG geometry. */
 import { useState } from 'react';
 import { Check, Gem, Gift, LockKeyhole, Star, Zap } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -76,10 +77,10 @@ export function ConstellationPanel({
   const payment = isCurrent ? readiness.payment : null;
   const nextUnlock = sets < 5 ? 5 : sets < 10 ? 10 : sets < 15 ? 15 : null;
   return (
-    <div
+    <section
       className="lab-scroll constellation-panel"
       tabIndex={0}
-      role="region"
+
       aria-label="Constellation crafting"
     >
       <div className="constellation-summary">
@@ -250,12 +251,13 @@ export function ConstellationPanel({
         </div>
         {!completed && recipe.set >= 5 && (
           <>
-            <label className="joker-toggle">
+            <label className="joker-toggle" htmlFor="craft-joker-toggle">
               <span>
                 <Gem size={16} /> Substitute missing currencies
                 <small>Spacedust replaces common currencies 1:1.</small>
               </span>
               <Switch
+                id="craft-joker-toggle"
                 checked={useJoker}
                 onCheckedChange={setUseJoker}
                 aria-label="Use Spacedust substitution"
@@ -320,6 +322,6 @@ export function ConstellationPanel({
           ? `${nextUnlock - sets} more sets to unlock ${ROBOTS[10 + nextUnlock / 5].name}.`
           : 'All constellations complete. The final tool is unlocked.'}
       </p>
-    </div>
+    </section>
   );
 }

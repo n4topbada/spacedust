@@ -1,10 +1,8 @@
 'use client';
 import { ArrowLeft, Gem, Star, Zap } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  ConstellationPanel,
-  CurrencyPanel,
-} from '@/components/progression-panels';
+import { ConstellationPanel } from '@/components/constellation-workshop';
+import { CurrencyPanel } from '@/components/progression-panels';
 import {
   format,
   production,

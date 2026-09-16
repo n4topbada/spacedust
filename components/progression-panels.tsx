@@ -9,7 +9,6 @@ import {
   Link2,
   LockKeyhole,
   Orbit,
-  Sparkles,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { equipmentStyle } from '@/lib/visuals';
@@ -60,10 +59,10 @@ export function ResearchPanel({ game, onAction }: Props) {
           </button>
         ))}
       </div>
-      <div
+      <section
         className="lab-scroll"
         tabIndex={0}
-        role="region"
+
         aria-label="Research list"
       >
         <p className="lab-note">
@@ -184,7 +183,7 @@ export function ResearchPanel({ game, onAction }: Props) {
               </button>
             </article>
           ))}
-      </div>
+      </section>
     </div>
   );
 }
@@ -238,10 +237,10 @@ export function CurrencyPanel({ game, onAction }: Props) {
   const [useJoker, setUseJoker] = useState(false);
   const target = conversionTarget(game.conversionMilestones);
   return (
-    <div
+    <section
       className="lab-scroll currency-panel"
       tabIndex={0}
-      role="region"
+
       aria-label="Currency exchange and permanent upgrades"
     >
       <Wallet game={game} />
@@ -396,7 +395,6 @@ export function CurrencyPanel({ game, onAction }: Props) {
           })}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
-export { ConstellationPanel } from './constellation-workshop';

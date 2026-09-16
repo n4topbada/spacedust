@@ -87,7 +87,11 @@ export function ToolMarket({
             <span>PRICE</span>
             <span>OWNED</span>
           </div>
-        <div className="tool-market-list" role="region" aria-label="Tool catalog" tabIndex={0}>
+          <section
+            className="tool-market-list"
+            aria-label="Tool catalog"
+            tabIndex={0}
+          >
             {ROBOTS.map((tool, i) => {
               const owned = game.robots[i],
                 locked = !toolUnlocked(game, i),
@@ -161,7 +165,7 @@ export function ToolMarket({
                 </button>
               );
             })}
-          </div>
+          </section>
           <p className="equipment-tip">
             <Radio size={14} /> Output doubles at 25, 75, 150 and 300 owned
             units.
