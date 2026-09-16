@@ -1,35 +1,54 @@
 # SPACE DUST
 
-**A cosmic clicker built in a few hours, inspired and designed by my son.**
+**Start with a grain of dust. Click your way to an entire universe.**
 
-[Play the game](https://spacedust-nine.vercel.app/) · [한국어](../README.md)
-
-## The story
-
-My elementary-school-aged son asked me to make a game about collecting space dust. Tiny grains gather into clumps, then asteroids and planets, eventually growing into a black hole, galaxies, and an entire universe.
-
-He also shaped the design. I turned his ideas and handwritten plans into a playable web game: robotic collectors, passing comets, upgrades, special currencies, and constellation crafting. The game became playable in a few hours, and his follow-up requests shaped the finished version.
-
-**Status:** Feature development is complete. The project closes with a code and documentation cleanup on September 17, 2026.
+[Play now](https://spacedust-nine.vercel.app/) · [한국어](../README.md)
 
 ![Space Dust gameplay](screenshots/universe.png)
 
-## Features
+## Imagined by my son
 
-- Twelve celestial stages, from dust to an entire universe, with Canvas animation.
-- Manual collection and fourteen robotic tools; buy one, ten, or the maximum affordable quantity.
-- Twenty-eight exact ×2 tool upgrades, twelve synergies, and three manual-click research tiers.
-- Regular and golden comet bonuses, visual effects, and optional sound.
-- A dedicated Craft screen with fifteen distinct constellations and sixty individual star recipes.
-- Four fixed conversion packages, five special currencies, permanent upgrades, and lucky boxes.
-- Browser autosave, up to eight hours of offline production, and reduced-motion settings.
-- A wide 1800 × 750 desktop console with a responsive mobile layout.
+My elementary-school-aged son asked me to make a game about collecting space dust, so I built this web game in a few hours. He shaped the design, too. His ideas and handwritten plans became a world where dust gathers into planets, grows into black holes, and eventually becomes an entire universe—with robotic collectors, passing comets, and constellations to craft along the way.
 
-Celestial evolution is a fantasy progression created for the game.
+At first, you collect tiny grains by hand. Then you buy tools, research stronger collection methods, and spend your resources completing constellations. **There is always another celestial form to discover or a stronger tool to unlock.**
 
-## Run and verify
+## How to play
 
-Use Node.js 24.21.0 or a newer 24.x patch. `.nvmrc` pins the verified version.
+1. **Click the celestial body to collect dust.** You begin with a cloud of drifting particles. Manual clicks and automatic collection fuel your growth, changing the body's appearance and effects as you progress.
+2. **Buy tools to automate collection.** Click a tool in the right-hand shop to purchase it. Fourteen tools take you from `Stardust Tweezers` through `Comet Tail Inceptor` to `Cosmic Rebirth`. Buy one, ten, or the maximum you can afford.
+3. **Research better collection.** Choose from twenty-eight upgrades that double individual tool output, twelve synergies between tools, and three manual-click research tiers. Decide where your next investment will make the biggest difference.
+4. **Catch passing comets.** Click a comet as it crosses the screen to collect bonus dust. Golden comets bring an even larger reward.
+5. **Complete constellations in Craft.** Convert dust into special currencies, then spend tools and resources to craft stars. Each star and completed constellation grants permanent bonuses, and later milestones unlock the most powerful tools.
+
+## From dust to the universe
+
+Explore twelve stages of growth. A black hole is another step on the journey, with galaxies and an even larger cosmos still ahead.
+
+> Cosmic Dust → Dust Cluster → Asteroid → Protoplanet → Planet → Star → Red Giant → Black Hole → Galaxy → Galaxy Group → Galaxy Cluster → The Universe
+
+Drifting particles, orbital trails, and glowing effects change as you grow. Watch the tiny speck you started clicking become a universe that fills the screen.
+
+## Constellations and special currencies
+
+Craft contains **fifteen distinct constellations and sixty individual stars**. Select a star to see its recipe. Crafting consumes dust, tools, and special currencies, with later constellations requiring stronger equipment and more materials.
+
+There are five special currencies: `Stardust`, `Moondust`, `Galaxydust`, `Solardust`, and `Spacedust`. Each conversion package randomly selects one common currency and awards the entire amount in that currency. Rare Spacedust can also serve as a wildcard crafting material.
+
+You can spend currencies on permanent improvements to comet frequency, manual collection, and comet rewards. Completed constellations provide extra bonuses and lucky boxes. Completing five, ten, and fifteen constellations unlocks the final three tools, one at each milestone.
+
+## Jump in
+
+**[Play in your browser](https://spacedust-nine.vercel.app/)** with no installation or sign-up. The game interface is in English, with a wide 1800 × 750 desktop layout and mobile support. Autosave, up to eight hours of offline collection, optional sound, and reduced-motion settings are included.
+
+## Make it your own
+
+This project is available under the **[MIT License](../LICENSE)**. Feel free to download, play, modify, improve, reuse, or redistribute it, including for commercial purposes. Keep the original copyright notice and license text with copies or distributions.
+
+Add new celestial stages or tools, experiment with the balance, or turn it into your own clicker game. I hope this little project becomes a starting point for someone else's ideas.
+
+## Run and modify locally
+
+Use Node.js 24.21.0 or a newer 24.x patch. Built with React 19, TypeScript, Vinext/Vite, Tailwind CSS, and Base UI.
 
 ```sh
 npm ci
@@ -39,34 +58,8 @@ npm run dev -- --hostname 127.0.0.1
 Open [http://localhost:3000](http://localhost:3000).
 
 ```sh
-npm run check         # Lint, types, 23 game tests, and formatting
-npm run build:vercel  # Static Vercel build → dist/client
-npm run build         # Existing Cloudflare / Sites build
+npm run check         # Lint, types, game tests, and formatting
+npm run build:vercel  # Static website build → dist/client
 ```
 
-Use `npm run format` to format source and documentation. GitHub Actions runs the same checks and static build for each pull request.
-
-## Code map
-
-| Path                                                           | Responsibility                                                          |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `app/page.tsx`                                                 | Simulation clock, persistence, input, and screen navigation             |
-| `components/game-dialogs.tsx`                                  | Help, settings, growth journey, and completion dialogs                  |
-| `components/starfield.tsx`, `celestial-scene.tsx`              | Background stars and celestial animation                                |
-| `components/tool-market.tsx`                                   | Direct tool purchasing and research tabs                                |
-| `components/crafting-screen.tsx`, `constellation-workshop.tsx` | Workshop navigation and star crafting                                   |
-| `components/progression-panels.tsx`                            | Research, conversions, and permanent upgrades                           |
-| `lib/economy.ts`                                               | Transactions, rewards, crafting, and save migrations                    |
-| `lib/catalog.ts`, `constellations.ts`                          | Tool/stage data and constellation geometry                              |
-| `tests/game.test.mjs`                                          | Economic rules and save compatibility                                   |
-| `public/`                                                      | Illustration sprite sheets generated during development and the favicon |
-
-Built with React 19, TypeScript, Vinext/Vite, Tailwind CSS, and Base UI. The live game runs as a static browser application and requires no player accounts or database.
-
-## Deployment and saves
-
-Live URL: **[spacedust-nine.vercel.app](https://spacedust-nine.vercel.app/)**. The Vercel project is `spacedust`. After linking the project, deploy with `vercel deploy --prod`; `vercel.json` contains the build settings.
-
-Progress is stored in `localStorage` for each browser and origin. Redeploying to the same domain preserves the save, but progress does not automatically sync across devices or domains. The key remains `spacedust.save.v1`; the current schema is version 4, with migrations for older saves.
-
-See [the workshop revision](workshop-update.md) for current balance and design decisions, and [the closeout notes](project-closeout.md) for the final scope and handover.
+Edit screens in `app/` and `components/`, tools and celestial stages in `lib/catalog.ts`, game rules in `lib/economy.ts`, and constellations in `lib/constellations.ts`. See the [workshop notes](workshop-update.md) for detailed crafting rules.
