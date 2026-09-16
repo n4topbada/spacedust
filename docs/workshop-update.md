@@ -20,11 +20,11 @@ There are 15 unique, connected, selectable star diagrams. Sets 1–5 contain thr
 ## Conversion packages
 
 | Dust cost | Full common-currency payout | Separate 2% Spacedust bonus |
-| ---: | ---: | ---: |
-| 1,000 | 1,000 | 1–2 |
-| 4,500 | 5,000 | 3–6 |
-| 30,000 | 35,000 | 12–24 |
-| 100,000 | 120,000 | 40–80 |
+| --------: | --------------------------: | --------------------------: |
+|     1,000 |                       1,000 |                         1–2 |
+|     4,500 |                       5,000 |                         3–6 |
+|    30,000 |                      35,000 |                       12–24 |
+|   100,000 |                     120,000 |                       40–80 |
 
 One of Stardust, Moondust, Galaxydust or Solardust is selected with 25% probability and receives the entire package amount. Spacedust is an independent additional reward. Guaranteed Spacedust still uses lifetime base dust converted: 50K, then ×4 thresholds, paid once each.
 
